@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { db, auth } from "../firebase";
 import { signOut } from "firebase/auth";
@@ -7,9 +7,9 @@ import {
   addDoc, deleteDoc, doc, updateDoc 
 } from "firebase/firestore";
 import { 
-  Film, Tv, Gamepad2, Plus, Trash2, CheckCircle2, 
+  Film, Tv, Gamepad2, Trash2, CheckCircle2, 
   Circle, Moon, Sun, LayoutGrid, LogOut,
-  Share2, ChevronRight, X, Check
+  Share2, ChevronRight, Check, Send, BookOpen, X
 } from "lucide-react";
 
 export default function WatchlistPage({ currentUser }) {
@@ -26,8 +26,18 @@ export default function WatchlistPage({ currentUser }) {
   const [loadingOwner, setLoadingOwner] = useState(true);
   const [items, setItems] = useState([]);
   const [input, setInput] = useState("");
-  const [pendingItem, setPendingItem] = useState(null);
-  const [toast, setToast] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
+  
+  // Input options state
+  const [inputStatus, setInputStatus] = useState("pending");
+  const [inputCategory, setInputCategory] = useState("movie");
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [forceHideOptions, setForceHideOptions] = useState(false);
+
+  // Toasts
+  const [toast, setToast] = useState(null); // { message: "", icon: <Icon /> }
+
+  const inputRef = useRef(null);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -82,29 +92,40 @@ export default function WatchlistPage({ currentUser }) {
     navigate("/");
   };
 
+  const showToast = (message, duration = 3000) => {
+    setToast({ message });
+    setTimeout(() => setToast(null), duration);
+  };
+
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
-    setToast(true);
-    setTimeout(() => setToast(false), 3000);
+    showToast("Link copied to clipboard");
   };
 
-  const handleAdd = useCallback(() => {
+  const handleAdd = useCallback(async () => {
     if (!input.trim() || !isOwner) return;
-    setPendingItem(input);
-    setInput("");
-  }, [input, isOwner]);
+    
+    const categoryToSave = activeTab === "all" ? inputCategory : activeTab;
+    const isWatched = inputStatus === "finished";
+    const nameToAdd = input.trim();
 
-  const selectCategory = async (type) => {
-    if (!isOwner) return;
     const itemsRef = collection(db, "users", ownerId, "watchlist");
     await addDoc(itemsRef, {
-      name: pendingItem,
-      type,
-      watched: false,
+      name: nameToAdd,
+      type: categoryToSave,
+      watched: isWatched,
       createdAt: Date.now()
     });
-    setPendingItem(null);
-  };
+
+    // Reset input but keep focus and options active
+    setInput("");
+    inputRef.current?.focus();
+    
+    // Show 0.5s toast as requested
+    setToast({ message: `'${nameToAdd}' added in ${categoryToSave}` });
+    setTimeout(() => setToast(null), 1000);
+
+  }, [input, isOwner, activeTab, inputCategory, inputStatus, ownerId]);
 
   const toggleWatched = async (id, currentStatus) => {
     if (!isOwner) return;
@@ -177,9 +198,11 @@ export default function WatchlistPage({ currentUser }) {
     );
   };
 
+  const showOptions = !forceHideOptions && (isInputFocused || input.trim().length > 0);
+
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-500 pb-20 selection:bg-brand-primary/10">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8">
         
         <nav className="flex items-center justify-between border-b border-border/40 pb-6">
           <div className="flex items-center gap-2">
@@ -214,67 +237,170 @@ export default function WatchlistPage({ currentUser }) {
         </header>
 
         {isOwner && (
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 group">
-              <div className="flex-1 relative">
-                <input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Add movie, series..."
-                  onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                  className="w-full bg-secondary/40 border-2 border-border/40 focus:border-brand-primary p-3 rounded-xl text-sm outline-none transition-all placeholder:text-muted-foreground/30 font-medium"
-                />
-              </div>
+          <div className="space-y-4">
+            {/* Input Wrapper */}
+            <div className="relative group">
+              <input
+                ref={inputRef}
+                value={input}
+                onFocus={() => {
+                  setIsInputFocused(true);
+                  setForceHideOptions(false);
+                }}
+                onBlur={(e) => {
+                  // Delay blur to allow clicks on options/tabs to process
+                  setTimeout(() => {
+                    if (!document.activeElement.closest('.add-options-area')) {
+                      setIsInputFocused(false);
+                    }
+                  }, 400);
+                }}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  setForceHideOptions(false);
+                }}
+                placeholder="What's next on your list?"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAdd();
+                  if (e.key === "Escape") {
+                    setForceHideOptions(true);
+                    inputRef.current?.blur();
+                  }
+                }}
+                className="w-full bg-secondary/40 border-2 border-border/40 focus:border-brand-primary py-3.5 pl-4 pr-12 rounded-xl text-sm outline-none transition-all placeholder:text-muted-foreground/30 font-medium"
+              />
               <button 
                 onClick={handleAdd}
                 disabled={!input.trim()}
-                className="p-3.5 bg-brand-primary text-white rounded-xl shadow-lg shadow-brand-primary/20 disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center shrink-0"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-muted-foreground hover:text-brand-primary disabled:opacity-30 transition-colors"
               >
-                <Plus className="w-5 h-5" />
+                <Send className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Centered Larger Category Selection */}
-            {pendingItem && (
-              <div className="animate-scale-in flex flex-col items-center justify-center space-y-6 p-8 bg-card border-2 border-brand-primary/20 rounded-2xl shadow-2xl">
-                <div className="text-center space-y-1">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-primary">Adding to list</p>
-                  <h3 className="text-xl font-bold italic">"{pendingItem}"</h3>
-                </div>
-                
-                <div className="flex flex-wrap items-center justify-center gap-4 w-full">
-                  <button onClick={() => selectCategory("movie")} className="flex flex-col items-center gap-2 px-8 py-5 rounded-xl bg-secondary hover:bg-brand-primary hover:text-white border border-border/50 transition-all shadow-md active:scale-95 min-w-[100px]">
-                    <Film className="w-6 h-6" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Movie</span>
-                  </button>
-                  <button onClick={() => selectCategory("series")} className="flex flex-col items-center gap-2 px-8 py-5 rounded-xl bg-secondary hover:bg-brand-primary hover:text-white border border-border/50 transition-all shadow-md active:scale-95 min-w-[100px]">
-                    <Tv className="w-6 h-6" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Series</span>
-                  </button>
-                  <button onClick={() => selectCategory("anime")} className="flex flex-col items-center gap-2 px-8 py-5 rounded-xl bg-secondary hover:bg-brand-primary hover:text-white border border-border/50 transition-all shadow-md active:scale-95 min-w-[100px]">
-                    <Gamepad2 className="w-6 h-6" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Anime</span>
-                  </button>
-                </div>
-
-                <button onClick={() => setPendingItem(null)} className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-destructive transition-colors">
-                  Cancel Addition
+            {/* Contextual Options (Shows when typing or focused) */}
+            {showOptions && (
+              <div className="relative add-options-area flex flex-col gap-3 p-3 pr-8 bg-secondary/20 rounded-xl border border-border/30 animate-fade-in">
+                <button 
+                  onClick={() => setForceHideOptions(true)}
+                  className="absolute top-2 right-2 text-muted-foreground hover:text-destructive transition-colors p-1"
+                  title="Close options (Esc)"
+                >
+                  <X className="w-4 h-4" />
                 </button>
+                {/* Category Selection (Only if All tab is active) */}
+                {activeTab === "all" && (
+                  <>
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest w-16">Type:</span>
+                      <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
+                        <input 
+                          type="radio" 
+                          name="category" 
+                          value="movie" 
+                          checked={inputCategory === "movie"} 
+                          onChange={() => setInputCategory("movie")}
+                          className="accent-brand-primary"
+                        />
+                        Movie
+                      </label>
+                      <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
+                        <input 
+                          type="radio" 
+                          name="category" 
+                          value="series" 
+                          checked={inputCategory === "series"} 
+                          onChange={() => setInputCategory("series")}
+                          className="accent-brand-primary"
+                        />
+                        Series
+                      </label>
+                      <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
+                        <input 
+                          type="radio" 
+                          name="category" 
+                          value="anime" 
+                          checked={inputCategory === "anime"} 
+                          onChange={() => setInputCategory("anime")}
+                          className="accent-brand-primary"
+                        />
+                        Anime
+                      </label>
+                      <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
+                        <input 
+                          type="radio" 
+                          name="category" 
+                          value="comics" 
+                          checked={inputCategory === "comics"} 
+                          onChange={() => setInputCategory("comics")}
+                          className="accent-brand-primary"
+                        />
+                        Comics
+                      </label>
+                    </div>
+                    <div className="h-px w-full bg-border/40"></div>
+                  </>
+                )}
+
+                {/* Status Selection */}
+                <div className="flex items-center gap-4">
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest w-16">Status:</span>
+                  <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="status" 
+                      value="pending" 
+                      checked={inputStatus === "pending"} 
+                      onChange={() => setInputStatus("pending")}
+                      className="accent-brand-primary"
+                    />
+                    Pending
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="status" 
+                      value="finished" 
+                      checked={inputStatus === "finished"} 
+                      onChange={() => setInputStatus("finished")}
+                      className="accent-brand-primary"
+                    />
+                    Finished
+                  </label>
+                </div>
               </div>
             )}
+            
+            {/* Tab Bar */}
+            <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-border/40">
+              {['all', 'movie', 'series', 'anime', 'comics'].map((tab) => (
+                <button
+                  key={tab}
+                  onMouseDown={(e) => {
+                    e.preventDefault(); // Prevents input from losing focus
+                    setActiveTab(tab);
+                  }}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap capitalize ${activeTab === tab ? 'bg-brand-primary text-white shadow-md' : 'text-muted-foreground hover:bg-secondary/50'}`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
-        <main className="space-y-8">
+        {/* List Content */}
+        <main className="space-y-6 pt-4">
           {items.length === 0 ? (
             <div className="py-12 border border-dashed border-border/40 rounded-2xl text-center">
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-30 italic">No entries yet</p>
             </div>
           ) : (
             <>
-              {renderSection("movie", "Movies", <Film className="w-4 h-4" />)}
-              {renderSection("series", "Series", <Tv className="w-4 h-4" />)}
-              {renderSection("anime", "Anime", <Gamepad2 className="w-4 h-4" />)}
+              {(activeTab === "all" || activeTab === "movie") && renderSection("movie", "Movies", <Film className="w-4 h-4" />)}
+              {(activeTab === "all" || activeTab === "series") && renderSection("series", "Series", <Tv className="w-4 h-4" />)}
+              {(activeTab === "all" || activeTab === "anime") && renderSection("anime", "Anime", <Gamepad2 className="w-4 h-4" />)}
+              {(activeTab === "all" || activeTab === "comics") && renderSection("comics", "Comics", <BookOpen className="w-4 h-4" />)}
             </>
           )}
         </main>
@@ -283,7 +409,7 @@ export default function WatchlistPage({ currentUser }) {
           <div className="fixed bottom-6 right-6 z-50 animate-slide-up">
             <div className="bg-foreground text-background px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 text-xs font-bold border border-white/10">
               <Check className="w-3.5 h-3.5 text-brand-primary" />
-              Link copied to clipboard
+              {toast.message}
             </div>
           </div>
         )}
