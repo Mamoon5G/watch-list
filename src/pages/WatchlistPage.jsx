@@ -371,23 +371,25 @@ export default function WatchlistPage({ currentUser }) {
               </div>
             )}
             
-            {/* Tab Bar */}
-            <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-border/40">
-              {['all', 'movie', 'series', 'anime', 'comics'].map((tab) => (
-                <button
-                  key={tab}
-                  onMouseDown={(e) => {
-                    e.preventDefault(); // Prevents input from losing focus
-                    setActiveTab(tab);
-                  }}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap capitalize ${activeTab === tab ? 'bg-brand-primary text-white shadow-md' : 'text-muted-foreground hover:bg-secondary/50'}`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
           </div>
         )}
+
+        {/* Tab Bar (Visible to everyone) */}
+        <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-border/40">
+          {['all', 'movie', 'series', 'anime', 'comics'].map((tab) => (
+            <button
+              key={tab}
+              onMouseDown={(e) => {
+                e.preventDefault(); // Prevents input from losing focus
+                setActiveTab(tab);
+              }}
+              onClick={() => setActiveTab(tab)} // Fallback for touch devices
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap capitalize ${activeTab === tab ? 'bg-brand-primary text-white shadow-md' : 'text-muted-foreground hover:bg-secondary/50'}`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
 
         {/* List Content */}
         <main className="space-y-6 pt-4">
@@ -414,8 +416,20 @@ export default function WatchlistPage({ currentUser }) {
           </div>
         )}
         
-        <footer className="pt-10 text-[9px] font-bold text-muted-foreground/30 uppercase tracking-[0.2em] text-center border-t border-border/40">
-          Watchly • Share your taste
+        <footer className="flex flex-col gap-2 pt-10 text-[9px] font-bold text-muted-foreground/30 uppercase tracking-[0.2em] text-center border-t border-border/40">
+          <div>Watchly • Share your taste</div>
+          <div>
+            Created by{" "}
+            <a 
+              href="https://github.com/Mamoon-5G" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-brand-primary transition-colors"
+            >
+              Mamoon Siddiqui
+            </a>.
+          </div>
+          <div>2026 &copy; All Rights Reserved</div>
         </footer>
       </div>
     </div>
@@ -439,7 +453,7 @@ function ItemRow({ item, isOwner, onToggle, onDelete }) {
         )}
       </button>
 
-      <span className={`flex-1 text-[11px] sm:text-xs font-bold truncate ${item.watched ? "line-through" : "text-foreground"}`}>
+      <span className={`flex-1 text-[11px] sm:text-xs font-bold break-words leading-snug py-0.5 ${item.watched ? "line-through" : "text-foreground"}`}>
         {item.name}
       </span>
 
