@@ -201,8 +201,8 @@ export default function WatchlistPage({ currentUser }) {
   const showOptions = !forceHideOptions && (isInputFocused || input.trim().length > 0);
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-500 pb-20 selection:bg-brand-primary/10">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-500 pb-6 selection:bg-brand-primary/10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8 flex flex-col">
         
         <nav className="flex items-center justify-between border-b border-border/40 pb-6">
           <div className="flex items-center gap-2">
@@ -302,7 +302,7 @@ export default function WatchlistPage({ currentUser }) {
                           onChange={() => setInputCategory("movie")}
                           className="accent-brand-primary"
                         />
-                        Movie
+                        Movies
                       </label>
                       <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
                         <input 
@@ -313,7 +313,7 @@ export default function WatchlistPage({ currentUser }) {
                           onChange={() => setInputCategory("series")}
                           className="accent-brand-primary"
                         />
-                        Series
+                        Series / TV Shows
                       </label>
                       <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
                         <input 
@@ -335,7 +335,7 @@ export default function WatchlistPage({ currentUser }) {
                           onChange={() => setInputCategory("comics")}
                           className="accent-brand-primary"
                         />
-                        Comics
+                        Books / Comics
                       </label>
                     </div>
                     <div className="h-px w-full bg-border/40"></div>
@@ -400,9 +400,9 @@ export default function WatchlistPage({ currentUser }) {
           ) : (
             <>
               {(activeTab === "all" || activeTab === "movie") && renderSection("movie", "Movies", <Film className="w-4 h-4" />)}
-              {(activeTab === "all" || activeTab === "series") && renderSection("series", "Series", <Tv className="w-4 h-4" />)}
+              {(activeTab === "all" || activeTab === "series") && renderSection("series", "Series / TV Shows", <Tv className="w-4 h-4" />)}
               {(activeTab === "all" || activeTab === "anime") && renderSection("anime", "Anime", <Gamepad2 className="w-4 h-4" />)}
-              {(activeTab === "all" || activeTab === "comics") && renderSection("comics", "Comics", <BookOpen className="w-4 h-4" />)}
+              {(activeTab === "all" || activeTab === "comics") && renderSection("comics", "Books / Comics", <BookOpen className="w-4 h-4" />)}
             </>
           )}
         </main>
@@ -416,7 +416,7 @@ export default function WatchlistPage({ currentUser }) {
           </div>
         )}
         
-        <footer className="flex flex-col gap-2 pt-10 text-[9px] font-bold text-muted-foreground/30 uppercase tracking-[0.2em] text-center border-t border-border/40">
+        <footer className="mt-auto flex flex-col gap-2 pt-6 text-[9px] font-bold text-muted-foreground/30 uppercase tracking-[0.2em] text-center border-t border-border/40">
           <div>Watchly • Share your taste</div>
           <div>
             Created by{" "}
