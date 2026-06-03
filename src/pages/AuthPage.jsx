@@ -20,7 +20,7 @@ export default function AuthPage({ user }) {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           const uName = userDoc.data().username;
-          navigate(`/${uName}-list`);
+          navigate(`/${uName}`);
         }
       }
     };
@@ -53,7 +53,7 @@ export default function AuthPage({ user }) {
           username: username.toLowerCase()
         });
 
-        navigate(`/${username.toLowerCase()}-list`);
+        navigate(`/${username.toLowerCase()}`);
       }
     } catch (err) {
       setError(err.message);

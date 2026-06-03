@@ -376,7 +376,7 @@ export default function WatchlistPage({ currentUser }) {
 
         {/* Tab Bar (Visible to everyone) */}
         <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-border/40">
-          {['all', 'movie', 'series', 'anime', 'comics'].map((tab) => (
+          {['all', 'movie', 'series', 'anime', 'books'].map((tab) => (
             <button
               key={tab}
               onMouseDown={(e) => {
@@ -402,7 +402,7 @@ export default function WatchlistPage({ currentUser }) {
               {(activeTab === "all" || activeTab === "movie") && renderSection("movie", "Movies", <Film className="w-4 h-4" />)}
               {(activeTab === "all" || activeTab === "series") && renderSection("series", "Series / TV Shows", <Tv className="w-4 h-4" />)}
               {(activeTab === "all" || activeTab === "anime") && renderSection("anime", "Anime", <Gamepad2 className="w-4 h-4" />)}
-              {(activeTab === "all" || activeTab === "comics") && renderSection("comics", "Books / Comics", <BookOpen className="w-4 h-4" />)}
+              {(activeTab === "all" || activeTab === "books") && renderSection("comics", "Books / Comics", <BookOpen className="w-4 h-4" />)}
             </>
           )}
         </main>
