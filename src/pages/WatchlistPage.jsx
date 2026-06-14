@@ -402,7 +402,7 @@ export default function WatchlistPage({ currentUser }) {
               {(activeTab === "all" || activeTab === "movie") && renderSection("movie", "Movies", <Film className="w-4 h-4" />)}
               {(activeTab === "all" || activeTab === "series") && renderSection("series", "Series / TV Shows", <Tv className="w-4 h-4" />)}
               {(activeTab === "all" || activeTab === "anime") && renderSection("anime", "Anime", <Gamepad2 className="w-4 h-4" />)}
-              {(activeTab === "all" || activeTab === "books") && renderSection("comics", "Books / Comics", <BookOpen className="w-4 h-4" />)}
+              {(activeTab === "all" || activeTab === "books") && renderSection("books", "Books / Comics", <BookOpen className="w-4 h-4" />)}
             </>
           )}
         </main>
