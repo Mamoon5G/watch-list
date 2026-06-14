@@ -421,7 +421,7 @@ export default function WatchlistPage({ currentUser }) {
           <div>
             Created by{" "}
             <a 
-              href="https://github.com/Mamoon-5G" 
+              href="https://github.com/Mamoon5G" 
               target="_blank" 
               rel="noopener noreferrer"
               className="hover:text-brand-primary transition-colors"
